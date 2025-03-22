@@ -87,9 +87,9 @@ ASGI_APPLICATION = 'project1.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': '#',       # Replace with your PostgreSQL database name
-        'USER': '#',      # Replace with your PostgreSQL username
-        'PASSWORD': '#',  # Replace with your PostgreSQL password
+        'NAME': 'p1db',       # Replace with your PostgreSQL database name
+        'USER': 'Superuser',      # Replace with your PostgreSQL username
+        'PASSWORD': 'abc@123',  # Replace with your PostgreSQL password
         'HOST': 'localhost',
         'PORT': '5432',
     }
