@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NutrAI - Chat</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <style>
+    body {
+      /* Start in dark mode by default */
+      background-color: #0f172a; /* Tailwind "slate-900" */
+      color: white;
+    }
+    /* Common transitions */
+    .transition-colors {
+      transition: all 0.3s ease;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b; /* slate-800 */
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569; /* slate-600 */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b; /* slate-400 */
+    }
+    .sidebar {
+      transition: transform 0.3s ease;
+    }
+    .sidebar-overlay {
+      transition: opacity 0.3s ease;
+    }
+
+    .message-bubble {
+      max-width: 80%;
+      margin-bottom: 1rem;
+      border-radius: 1rem;
+      padding: 1rem;
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .message-bubble:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .message-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      width: 1rem;
+      height: 1rem;
+      transform: rotate(45deg);
+    }
+    .user-message {
+      background: #3b82f6; /* blue-500 */
+      margin-left: auto;
+      border-bottom-right-radius: 0.25rem;
+    }
+    .user-message::after {
+      right: 1rem;
+      background: #3b82f6;
+    }
+    .ai-message {
+      background: #475569; /* slate-600 */
+      margin-right: auto;
+      border-bottom-left-radius: 0.25rem;
+    }
+    .ai-message::after {
+      left: 1rem;
+      background: #475569;
+    }
+    /* Timestamps */
+    .timestamp {
+      font-size: 0.75rem;
+      color: #94a3b8; /* slate-400 */
+      margin-top: 0.25rem;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background-color: #60a5fa; /* blue-400 */
+      border-radius: 50%;
+      display: inline-block;
+      margin: 0 2px;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .typing-indicator span:nth-child(1) {
+      animation: bounce 1s infinite 0.2s;
+    }
+    .typing-indicator span:nth-child(2) {
+      animation: bounce 1s infinite 0.4s;
+    }
+    .typing-indicator span:nth-child(3) {
+      animation: bounce 1s infinite 0.6s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP NAV (like index.html) -->
+  <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <!-- Left: Brand -->
+      <div class="flex items-center space-x-3">
+        <!-- Apple icon from index -->
+        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
+          <i class="bi bi-apple text-white text-xl"></i>
+        </div>
+        <span class="ml-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">
+          NutrAI
+        </span>
+        <!-- "Powered by Gemini" on md+ screens -->
+        <span class="hidden md:flex items-center text-sm text-slate-400">
+          <span>Powered by</span>
+          <span class="ml-1 font-semibold text-blue-500 flex items-center">
+            Gemini AI
+            <img src="/api/placeholder/24/24" alt="Gemini AI" class="ml-1 h-5 w-5 rounded-full">
+          </span>
+        </span>
+      </div>
+      
+      <!-- Right: Notification, Dark Mode, User Avatar -->
+      <div class="flex items-center space-x-4">
+        <!-- Dark Mode Toggle -->
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-700 transition-colors">
+          <i class="bi bi-sun text-xl"></i>
+        </button>
+        <!-- Notifications icon -->
+        <button id="notificationsBtn" class="p-2 rounded-full hover:bg-slate-700">
+          <i class="bi bi-bell text-xl"></i>
+        </button>
+        <!-- User Avatar -->
+        <div class="flex items-center space-x-4">
+          <div class="relative">
+            <!-- Display the first 2 letters of user_extra_data.name -->
+            <button id="userIconBtn" class="flex items-center space-x-2 p-2 rounded-full hover:bg-slate-700">
+              <div id="userIcon" class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                <span class="font-medium">HE</span>
+              </div>
+            </button>
+            <div id="userDropdown" class="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-lg hidden">
+              <div class="p-3">
+                <!-- Show user name from user_extra_data -->
+                <p class="text-sm">{{ user_extra_data.name|default:"hello" }}</p>
+                <!-- Example logout link -->
+                <a href="{% url 'logout' %}" class="block mt-2 text-sm text-blue-400 hover:underline">Logout</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- MAIN CONTAINER (with sidebar + chat) -->
+  <div class="flex flex-1 h-[calc(100vh-60px)]">
+
+    <!-- LEFT SIDEBAR (like index.html) -->
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col">
+      <!-- Sidebar Header: "Nutrition History" button -->
+      <div class="p-4 border-b border-slate-700">
+        <button id="toggle-history-btn" class="w-full py-2 px-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-medium rounded-lg transition-all flex items-center justify-center">
+          <i class="bi bi-calendar-week mr-2"></i>
+          <span>Nutrition History</span>
+        </button>
+      </div>
+      
+      <!-- Sidebar Links -->
+      <div class="p-4 flex-1 overflow-y-auto">
+        <nav class="space-y-2 text-sm">
+          <a href="#" class="block p-3 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors">
+            <i class="bi bi-chat-dots mr-2"></i> Chat
+          </a>
+          <a href="{% url 'barcode_scanner' %}" class="block p-3 rounded-lg hover:bg-slate-600 transition-colors">
+            <i class="bi bi-upc-scan mr-2"></i> Barcode Scanner
+          </a>
+          <a href="{% url 'dashboard' %}" class="block p-3 rounded-lg hover:bg-slate-600 transition-colors">
+            <i class="bi bi-speedometer2 mr-2"></i> Dashboard
+          </a>
+          <a href="#" class="block p-3 rounded-lg hover:bg-slate-600 transition-colors">
+            <i class="bi bi-gear mr-2"></i> Settings
+          </a>
+          <a href="#" class="block p-3 rounded-lg hover:bg-slate-600 transition-colors">
+            <i class="bi bi-question-circle mr-2"></i> Help
+          </a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- CHAT AREA -->
+    <main class="flex-1 overflow-hidden flex flex-col">
+      <!-- Chat Container -->
+      <div class="flex-1 overflow-y-auto p-6" id="chat-box">
+        <!-- Welcome Card (similar style to "dashboard cards") -->
+        <div class="max-w-4xl mx-auto mb-8 animate-fade-in">
+          <div class="bg-slate-800 rounded-lg p-5 border border-slate-700">
+            <h1 class="text-2xl font-bold mb-2">Welcome to NutrAI Chat</h1>
+            <p class="text-slate-300">Ask me anything or try some of these examples:</p>
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div class="bg-slate-700 p-3 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors suggest-prompt">
+                <i class="bi bi-lightbulb text-blue-400 text-lg"></i>
+                <div class="font-medium mt-1">How can I improve my productivity?</div>
+              </div>
+              <div class="bg-slate-700 p-3 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors suggest-prompt">
+                <i class="bi bi-book text-green-400 text-lg"></i>
+                <div class="font-medium mt-1">Explain quantum computing</div>
+              </div>
+              <div class="bg-slate-700 p-3 rounded-lg hover:bg-slate-600 cursor-pointer transition-colors suggest-prompt">
+                <i class="bi bi-pen text-purple-400 text-lg"></i>
+                <div class="font-medium mt-1">Write a short poem about technology</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Single AI message -->
+        <div class="message-bubble ai-message animate-fade-in">
+          <div class="flex items-center mb-2">
+            <!-- Apple icon -->
+            <div class="h-8 w-8 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
+              <i class="bi bi-apple text-white text-sm"></i>
+            </div>
+            <div class="ml-2 font-medium">NutrAI</div>
+          </div>
+          <p>Hi there! How can I help you today?</p>
+          <div class="timestamp">Sent at 10:15 AM</div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="border-t border-slate-700 p-4 bg-slate-800 shadow-lg">
+        <div class="max-w-4xl mx-auto">
+          <form id="message-form" class="relative">
+            <!-- Removed the "Your name" input and "will appear as" text -->
+
+            <div class="rounded-lg bg-slate-700 border border-slate-600 overflow-hidden shadow-md hover:shadow-lg transition-all">
+              <div class="flex items-center">
+                <textarea
+                  id="message"
+                  rows="1"
+                  placeholder="Ask NutrAI anything..."
+                  class="flex-1 bg-transparent border-0 resize-none focus:ring-0 px-4 py-3 text-white placeholder-slate-400"
+                ></textarea>
+                <button type="submit" id="send-button" class="p-3 text-white bg-amber-400 hover:bg-amber-500 mr-1 rounded-r-lg transition-colors">
+                  <i class="bi bi-send"></i>
+                </button>
+              </div>
+            </div>
+            <div class="mt-2 flex justify-between items-center px-1 text-xs text-slate-400">
+              <div class="flex items-center">
+                <i class="bi bi-lightning-charge mr-1 animate-pulse"></i>
+                <span>Powered by Gemini AI</span>
+              </div>
+              <div id="connection-status-container" class="flex items-center">
+                <span id="connection-status">Connecting...</span>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- JavaScript for Chat Functionality -->
+  <script>
+    /****************************************
+     *  Setup user name from DB (user_extra_data)
+     ****************************************/
+    const userName = "{{ user_extra_data.name|default:'hello' }}";
+
+    // Convert user name to 2-letter initials
+    function getInitials(name) {
+      if (!name) return "?";
+      return name
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase())
+        .join("")
+        .substring(0, 2);
+    }
+
+    // Update user icon on page load
+    function updateUserIcon(username) {
+      const initials = username.slice(0,2).toUpperCase();
+      document.getElementById('userIcon').innerHTML = '<span class="font-medium">' + initials + '</span>';
+    }
+    updateUserIcon(userName);
+
+    // Toggle user dropdown on user icon click
+    document.getElementById('userIconBtn').addEventListener('click', () => {
+      const dropdown = document.getElementById('userDropdown');
+      dropdown.classList.toggle('hidden');
+    });
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      const userIconBtn = document.getElementById('userIconBtn');
+      const userDropdown = document.getElementById('userDropdown');
+      if (!userIconBtn.contains(event.target)) {
+        userDropdown.classList.add('hidden');
+      }
+    });
+
+    /****************************************
+     *  WEBSOCKET & CHAT FUNCTIONALITY
+     ****************************************/
+    const chatBox = document.getElementById("chat-box");
+    const messageInput = document.getElementById("message");
+    const sendButton = document.getElementById("send-button");
+    const connectionStatus = document.getElementById("connection-status");
+    const connectionStatusContainer = document.getElementById("connection-status-container");
+    const messageForm = document.getElementById("message-form");
+
+    // Connect WebSocket
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(wsScheme + "://" + window.location.host + "/ws/project1/");
+    
+    socket.onopen = function() {
+      console.log("WebSocket connected!");
+      connectionStatus.textContent = "Connected";
+      connectionStatus.classList.add("text-green-400");
+      gsap.to(connectionStatusContainer, {
+        keyframes: [
+          { scale: 1.1, duration: 0.2 },
+          { scale: 1, duration: 0.2 }
+        ]
+      });
+    };
+    
+    socket.onclose = function() {
+      connectionStatus.textContent = "Disconnected";
+      connectionStatus.classList.remove("text-green-400");
+      connectionStatus.classList.add("text-red-400");
+    };
+    
+    // Receive messages
+    socket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      // If the message is from the same userName, label it 'user'; otherwise 'ai'
+      addMessageToChat(
+        data.username, 
+        data.message, 
+        data.username === userName ? 'user' : 'ai',
+        data.timestamp,
+        data.time_taken
+      );
+    };
+    
+    // Add message to chat area
+    function addMessageToChat(sender, message, type, timestamp, timeTaken) {
+      const initials = getInitials(sender);
+      const messageElement = document.createElement("div");
+      messageElement.className = `message-bubble ${type}-message animate-fade-in`;
+      
+      let html = "";
+      if (type === 'user') {
+        // local user
+        html += `
+          <div class="flex items-center justify-end mb-2">
+            <div class="mr-2 font-medium">${sender}</div>
+            <div class="h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center">
+              <span class="font-medium">${initials}</span>
+            </div>
+          </div>
+          <p>${message}</p>
+        `;
+      } else {
+        // AI = NutrAI style
+        html += `
+          <div class="flex items-center mb-2">
+            <div class="h-8 w-8 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
+              <i class="bi bi-apple text-white text-sm"></i>
+            </div>
+            <div class="ml-2 font-medium">NutrAI</div>
+          </div>
+          <p>${message}</p>
+        `;
+      }
+      
+      // Timestamp
+      if (timestamp) {
+        html += `<div class="timestamp">Sent at ${timestamp}`;
+        if (timeTaken) {
+          html += ` (Response in ${timeTaken})`;
+        }
+        html += `</div>`;
+      }
+      
+      messageElement.innerHTML = html;
+      chatBox.appendChild(messageElement);
+      gsap.from(messageElement, {
+        opacity: 0,
+        y: 20,
+        duration: 0.5,
+        ease: "power2.out"
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Send message
+    messageForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      
+      if (!message) {
+        // highlight if empty
+        gsap.to(messageInput.parentElement, {
+          keyframes: [
+            { borderColor: "#ef4444", duration: 0.2 },
+            { borderColor: "#475569", duration: 0.2 }
+          ]
+        });
+        return;
+      }
+      
+      // Send message via WebSocket
+      socket.send(JSON.stringify({ username: userName, message }));
+      // Animate send button
+      gsap.to(sendButton, {
+        scale: 0.9,
+        duration: 0.1,
+        onComplete: () => {
+          gsap.to(sendButton, { scale: 1, duration: 0.1 });
+        }
+      });
+      messageInput.value = "";
+      messageInput.style.height = 'auto';
+    });
+
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
+      const lineHeight = parseInt(getComputedStyle(this).lineHeight);
+      const maxHeight = lineHeight * 5;
+      if (this.scrollHeight > maxHeight) {
+        this.style.height = maxHeight + 'px';
+        this.style.overflowY = 'auto';
+      } else {
+        this.style.overflowY = 'hidden';
+      }
+    });
+
+
+    /****************************************
+     *  THEME TOGGLE
+     ****************************************/
+    const themeToggle = document.getElementById('theme-toggle');
+    let isDarkMode = true;
+    themeToggle.addEventListener('click', () => {
+      if(isDarkMode) {
+        document.body.classList.replace('bg-slate-900','bg-slate-100');
+        document.body.classList.replace('text-white','text-slate-900');
+        themeToggle.innerHTML = '<i class="bi bi-moon text-xl"></i>';
+        document.querySelectorAll('.bg-slate-800').forEach(el => el.classList.replace('bg-slate-800','bg-white'));
+        document.querySelectorAll('.bg-slate-700').forEach(el => el.classList.replace('bg-slate-700','bg-slate-200'));
+        document.querySelectorAll('.border-slate-700').forEach(el => el.classList.replace('border-slate-700','border-slate-200'));
+        document.querySelectorAll('.text-slate-400').forEach(el => el.classList.replace('text-slate-400','text-slate-500'));
+        document.querySelectorAll('.text-slate-300').forEach(el => el.classList.replace('text-slate-300','text-slate-600'));
+        isDarkMode = false;
+      } else {
+        document.body.classList.replace('bg-slate-100','bg-slate-900');
+        document.body.classList.replace('text-slate-900','text-white');
+        themeToggle.innerHTML = '<i class="bi bi-sun text-xl"></i>';
+        document.querySelectorAll('.bg-white').forEach(el => el.classList.replace('bg-white','bg-slate-800'));
+        document.querySelectorAll('.bg-slate-200').forEach(el => el.classList.replace('bg-slate-200','bg-slate-700'));
+        document.querySelectorAll('.border-slate-200').forEach(el => el.classList.replace('border-slate-200','border-slate-700'));
+        document.querySelectorAll('.text-slate-500').forEach(el => el.classList.replace('text-slate-500','text-slate-400'));
+        document.querySelectorAll('.text-slate-600').forEach(el => el.classList.replace('text-slate-600','text-slate-300'));
+        isDarkMode = true;
+      }
+    });
+    
+    /****************************************
+     *  INITIAL ENTRANCE ANIMATIONS
+     ****************************************/
+    document.addEventListener("DOMContentLoaded", function() {
+      gsap.from("nav .flex", {
+        y: -20,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power2.out",
+        stagger: 0.2
+      });
+      gsap.from(".animate-fade-in", {
+        y: 20,
+        opacity: 0,
+        duration: 0.8,
+        delay: 0.5,
+        ease: "power2.out"
+      });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      // Ctrl/Cmd + Enter to send
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (messageInput.value.trim() !== '') {
+          messageForm.dispatchEvent(new Event('submit'));
+        }
+      }
+      // Press '/' to focus
+      if (e.key === '/' && document.activeElement !== messageInput) {
+        e.preventDefault();
+        messageInput.focus();
+      }
+    });
+
+    // Periodic connection status animation
+    setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        gsap.to(connectionStatusContainer, {
+          keyframes: [
+            { scale: 1.05, duration: 0.2 },
+            { scale: 1, duration: 0.2 }
+          ]
+        });
+      }
+    }, 30000);
+
+    // Notifications modal: open on click and close on button press
+    document.getElementById('notificationsBtn').addEventListener('click', () => {
+      document.getElementById('notificationsModal').classList.remove('hidden');
+    });
+    document.getElementById('closeNotifications').addEventListener('click', () => {
+      document.getElementById('notificationsModal').classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

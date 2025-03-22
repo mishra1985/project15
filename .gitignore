@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django specific:
+*.log
+db.sqlite3  # If you ever use SQLite, but in your case PostgreSQL is used
+*.pot
+*.pyc
+
+# Environment files (keep credentials secure)
+.env
+*.env
+
+# Static and media directories (if generated dynamically)
+staticfiles/
+media/
+
+# Virtual environment directories
+venv/
+env/
+
+# Deployment files that may contain sensitive info (adjust if needed)
+*.pem

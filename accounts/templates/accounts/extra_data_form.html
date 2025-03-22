@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NutrAI - Onboarding</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    /* Custom animations and effects */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes borderFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    .animate-border-flow {
+      background: linear-gradient(45deg, #3b82f6, #10b981, #f59e0b, #3b82f6);
+      background-size: 300% 300%;
+      animation: borderFlow 6s linear infinite;
+    }
+    .sidebar-transition { transition: all 0.3s ease; }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb {
+      background: #475569; border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    
+    /* Glass effect */
+    .glass-effect {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    
+    /* Step transition */
+    .step { display: none; }
+    .step.active { display: block; }
+    
+    /* Progress indicator */
+    .step-progress-bar {
+      height: 5px;
+      background-color: #334155;
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .step-progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(to right, #f59e0b, #f97316);
+      border-radius: 9999px;
+      transition: width 0.5s ease;
+    }
+    
+    /* Input focus styles */
+    input:focus, select:focus {
+      outline: none;
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+    }
+    
+    /* Floating label effect */
+    .floating-label {
+      position: absolute;
+      pointer-events: none;
+      left: 16px;
+      top: 16px;
+      transition: 0.2s ease all;
+      color: #94a3b8;
+    }
+    input:focus ~ .floating-label,
+    input:not(:placeholder-shown) ~ .floating-label,
+    select:focus ~ .floating-label,
+    select:not([value=""]) ~ .floating-label {
+      top: -12px;
+      left: 12px;
+      font-size: 12px;
+      color: #f59e0b;
+      background-color: #1e293b;
+      padding: 0 4px;
+    }
+    
+    /* Greeting animation */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .animate-pulse-text {
+      animation: pulse 2s infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-white min-h-screen flex flex-col">
+  <!-- Top Navigation -->
+  <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <!-- Logo and Brand -->
+      <div class="flex items-center space-x-3">
+        <div class="flex items-center">
+          <div class="h-10 w-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
+            <i class="bi bi-apple text-white text-xl"></i>
+          </div>
+          <span class="ml-3 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">NutrAI</span>
+        </div>
+        <span class="hidden md:flex items-center text-sm text-slate-400">
+          <span>Powered by</span>
+          <span class="ml-1 font-semibold text-blue-500 flex items-center">
+            Gemini AI
+            <img src="/api/placeholder/24/24" alt="Gemini AI" class="ml-1 h-5 w-5 rounded-full">
+          </span>
+        </span>
+      </div>
+      
+      <!-- User Actions -->
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-700 transition-colors">
+          <i class="bi bi-sun text-xl"></i>
+        </button>
+        <button class="p-2 rounded-full hover:bg-slate-700 transition-colors">
+          <i class="bi bi-question-circle text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Main Container -->
+  <div class="flex flex-1 h-[calc(100vh-60px)]">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-800 border-r border-slate-700 sidebar-transition hidden md:block">
+      <div class="flex flex-col h-full">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-slate-700">
+          <h2 class="font-semibold text-lg text-slate-200">Getting Started</h2>
+          <p class="text-sm text-slate-400 mt-1">Complete your profile to get personalized nutrition recommendations</p>
+        </div>
+        
+        <!-- Onboarding Steps -->
+        <div class="p-4 border-b border-slate-700">
+          <div class="flex flex-col space-y-3">
+            <a href="#" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-lg transition-colors flex items-center justify-between" id="step1-link">
+              <div class="flex items-center">
+                <div class="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold">1</div>
+                <span class="font-medium ml-2">Basic Info</span>
+              </div>
+              <i class="bi bi-check-circle text-green-400 hidden" id="step1-check"></i>
+            </a>
+            <a href="#" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-lg transition-colors flex items-center justify-between" id="step2-link">
+              <div class="flex items-center">
+                <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold">2</div>
+                <span class="font-medium ml-2">Body Metrics</span>
+              </div>
+              <i class="bi bi-check-circle text-green-400 hidden" id="step2-check"></i>
+            </a>
+            <a href="#" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-lg transition-colors flex items-center justify-between" id="step3-link">
+              <div class="flex items-center">
+                <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold">3</div>
+                <span class="font-medium ml-2">Preferences</span>
+              </div>
+              <i class="bi bi-check-circle text-green-400 hidden" id="step3-check"></i>
+            </a>
+          </div>
+        </div>
+        
+        <!-- Information -->
+        <div class="p-4 flex-grow">
+          <div class="bg-slate-700 rounded-lg p-4 flex flex-col space-y-3">
+            <h3 class="font-semibold text-slate-200 flex items-center">
+              <i class="bi bi-lightbulb-fill text-amber-400 mr-2"></i>
+              Why this matters
+            </h3>
+            <p class="text-sm text-slate-400">Your data helps us create a personalized nutrition plan tailored to your specific needs and goals.</p>
+            <p class="text-sm text-slate-400">We use this information to calculate your daily calorie needs, macronutrient targets, and dietary recommendations.</p>
+          </div>
+        </div>
+        
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-slate-700">
+          <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center cursor-pointer hover:text-blue-400 transition-colors">
+              <i class="bi bi-shield-check mr-2"></i>
+              <span>Privacy</span>
+            </div>
+            <div class="flex items-center cursor-pointer hover:text-blue-400 transition-colors">
+              <i class="bi bi-question-circle mr-2"></i>
+              <span>Help</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6">
+      <!-- Mobile Step Indicator -->
+      <div class="md:hidden mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <button id="mobile-menu-toggle" class="flex items-center text-sm text-slate-400 hover:text-white transition-colors">
+            <i class="bi bi-list text-xl mr-1"></i>
+            <span>Menu</span>
+          </button>
+          <div class="text-sm text-slate-400">Step <span id="current-step-mobile">1</span> of 3</div>
+        </div>
+        <div class="step-progress-bar">
+          <div class="step-progress-bar-fill" style="width: 33%"></div>
+        </div>
+      </div>
+      
+      <!-- Form Container -->
+      <div class="max-w-2xl mx-auto">
+        <!-- Step Progress (Desktop) -->
+        <div class="hidden md:block mb-6">
+          <div class="flex justify-between items-center mb-2">
+            <div class="text-xl font-bold">Profile Setup</div>
+            <div class="text-sm text-slate-400">Step <span id="current-step">1</span> of 3</div>
+          </div>
+          <div class="step-progress-bar">
+            <div class="step-progress-bar-fill" style="width: 33%"></div>
+          </div>
+        </div>
+        
+        <!-- Form -->
+        <!-- Note: the form action points to the URL for extra_data_view -->
+        <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+          <form id="nutraiForm" method="post" action="{% url 'extra_data' %}">
+            {% csrf_token %}
+            <!-- Step 1: Basic Info -->
+            <div class="step active" data-step="1">
+              <div class="flex justify-center mb-6">
+                <div class="h-16 w-16 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
+                  <i class="bi bi-person-fill text-white text-3xl"></i>
+                </div>
+              </div>
+              <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2 animate-pulse-text bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">Welcome to NutrAI</h2>
+                <p class="text-slate-400">Let's start by getting to know you better</p>
+              </div>
+              
+              <!-- Name Input -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-person"></i>
+                  </div>
+                  <input type="text" name="name" id="name" class="bg-transparent w-full px-4 py-3 text-slate-200 placeholder-transparent" placeholder="Name" required>
+                  <label for="name" class="floating-label">Name</label>
+                </div>
+              </div>
+              
+              <!-- Goal Selection -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-bullseye"></i>
+                  </div>
+                  <select name="goal" id="goal" class="bg-transparent w-full px-4 py-3 text-slate-200 appearance-none" required>
+                    <option value="" disabled selected></option>
+                    <option value="Weight Loss">Weight Loss</option>
+                    <option value="Weight Gain">Weight Gain</option>
+                    <option value="Maintain Weight">Maintain Weight</option>
+                    <option value="Build Muscle">Build Muscle</option>
+                    <option value="Improve Health">Improve Health</option>
+                  </select>
+                  <label for="goal" class="floating-label">Goal</label>
+                  <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <i class="bi bi-chevron-down"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Diet Preference -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-egg-fried"></i>
+                  </div>
+                  <select name="diet" id="diet" class="bg-transparent w-full px-4 py-3 text-slate-200 appearance-none" required>
+                    <option value="" disabled selected></option>
+                    <option value="No Restrictions">No Restrictions</option>
+                    <option value="Vegetarian">Vegetarian</option>
+                    <option value="Vegan">Vegan</option>
+                    <option value="Paleo">Paleo</option>
+                    <option value="Keto">Keto</option>
+                    <option value="Mediterranean">Mediterranean</option>
+                    <option value="Gluten-Free">Gluten-Free</option>
+                  </select>
+                  <label for="diet" class="floating-label">Diet Preference</label>
+                  <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <i class="bi bi-chevron-down"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between mt-8">
+                <div></div> <!-- Spacer -->
+                <button type="button" class="next-step px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg font-medium hover:from-amber-600 hover:to-orange-600 transition-colors flex items-center">
+                  Continue
+                  <i class="bi bi-arrow-right ml-2"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Step 2: Body Metrics -->
+            <div class="step" data-step="2">
+              <div class="flex justify-center mb-6">
+                <div class="h-16 w-16 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center">
+                  <i class="bi bi-rulers text-white text-3xl"></i>
+                </div>
+              </div>
+              <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2">Body Metrics</h2>
+                <p class="text-slate-400">Help us calculate your nutritional needs accurately</p>
+              </div>
+              
+              <!-- Age Input -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-calendar3"></i>
+                  </div>
+                  <input type="number" name="age" id="age" min="18" max="100" class="bg-transparent w-full px-4 py-3 text-slate-200 placeholder-transparent" placeholder="Age" required>
+                  <label for="age" class="floating-label">Age</label>
+                </div>
+              </div>
+              
+              <!-- Gender Selection -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-gender-ambiguous"></i>
+                  </div>
+                  <select name="gender" id="gender" class="bg-transparent w-full px-4 py-3 text-slate-200 appearance-none" required>
+                    <option value="" disabled selected></option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-binary">Non-binary</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                  <label for="gender" class="floating-label">Gender</label>
+                  <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <i class="bi bi-chevron-down"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Height and Weight Inputs -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="relative">
+                  <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                    <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                      <i class="bi bi-arrows-vertical"></i>
+                    </div>
+                    <input type="number" name="height" id="height" min="100" max="250" class="bg-transparent w-full px-4 py-3 text-slate-200 placeholder-transparent" placeholder="Height (cm)" required>
+                    <label for="height" class="floating-label">Height (cm)</label>
+                  </div>
+                </div>
+                <div class="relative">
+                  <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                    <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                      <i class="bi bi-speedometer2"></i>
+                    </div>
+                    <input type="number" name="weight" id="weight" min="30" max="300" class="bg-transparent w-full px-4 py-3 text-slate-200 placeholder-transparent" placeholder="Weight (kg)" required>
+                    <label for="weight" class="floating-label">Weight (kg)</label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Activity Level Selection -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-activity"></i>
+                  </div>
+                  <select name="activity" id="activity" class="bg-transparent w-full px-4 py-3 text-slate-200 appearance-none" required>
+                    <option value="" disabled selected></option>
+                    <option value="Sedentary">Sedentary (little or no exercise)</option>
+                    <option value="Light">Light (exercise 1-3 days/week)</option>
+                    <option value="Moderate">Moderate (exercise 3-5 days/week)</option>
+                    <option value="Active">Active (exercise 6-7 days/week)</option>
+                    <option value="Very Active">Very Active (hard exercise daily)</option>
+                  </select>
+                  <label for="activity" class="floating-label">Activity Level</label>
+                  <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <i class="bi bi-chevron-down"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between mt-8">
+                <button type="button" class="prev-step px-6 py-3 bg-slate-700 rounded-lg font-medium hover:bg-slate-600 transition-colors flex items-center">
+                  <i class="bi bi-arrow-left mr-2"></i>
+                  Back
+                </button>
+                <button type="button" class="next-step px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-colors flex items-center">
+                  Continue
+                  <i class="bi bi-arrow-right ml-2"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Step 3: Preferences -->
+            <div class="step" data-step="3">
+              <div class="flex justify-center mb-6">
+                <div class="h-16 w-16 rounded-full bg-gradient-to-r from-green-400 to-green-600 flex items-center justify-center">
+                  <i class="bi bi-sliders text-white text-3xl"></i>
+                </div>
+              </div>
+              <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold mb-2">Dietary Preferences</h2>
+                <p class="text-slate-400">Tell us about your food preferences and restrictions</p>
+              </div>
+              
+              <!-- Allergies/Intolerances -->
+              <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-slate-300">Do you have any allergies or intolerances?</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <label class="flex items-center bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
+                    <input type="checkbox" name="allergies" value="Dairy" class="mr-2">
+                    <span>Dairy</span>
+                  </label>
+                  <label class="flex items-center bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
+                    <input type="checkbox" name="allergies" value="Eggs" class="mr-2">
+                    <span>Eggs</span>
+                  </label>
+                  <label class="flex items-center bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
+                    <input type="checkbox" name="allergies" value="Nuts" class="mr-2">
+                    <span>Nuts</span>
+                  </label>
+                  <label class="flex items-center bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
+                    <input type="checkbox" name="allergies" value="Gluten" class="mr-2">
+                    <span>Gluten</span>
+                  </label>
+                  <label class="flex items-center bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
+                    <input type="checkbox" name="allergies" value="Soy" class="mr-2">
+                    <span>Soy</span>
+                  </label>
+                  <label class="flex items-center bg-slate-700 p-3 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
+                    <input type="checkbox" name="allergies" value="Shellfish" class="mr-2">
+                    <span>Shellfish</span>
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Dietary Preferences -->
+              <div class="mb-6">
+                <label class="block mb-2 text-sm font-medium text-slate-300">Foods you prefer to avoid</label>
+                <div class="relative">
+                  <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                    <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                      <i class="bi bi-x-circle"></i>
+                    </div>
+                    <input type="text" name="avoid" id="avoid" class="bg-transparent w-full px-4 py-3 text-slate-200 placeholder-transparent">
+                    <label for="avoid" class="floating-label">Foods to avoid (comma separated)</label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Meal Frequency -->
+              <div class="mb-6 relative">
+                <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 overflow-hidden">
+                  <div class="flex-shrink-0 flex items-center justify-center h-full w-12 bg-slate-600 text-slate-400">
+                    <i class="bi bi-clock"></i>
+                  </div>
+                  <select name="meals" id="meals" class="bg-transparent w-full px-4 py-3 text-slate-200 appearance-none" required>
+                    <option value="" disabled selected></option>
+                    <option value="3">3 meals per day</option>
+                    <option value="4">4 meals per day</option>
+                    <option value="5">5 meals per day</option>
+                    <option value="6">6 meals per day</option>
+                  </select>
+                  <label for="meals" class="floating-label">Preferred meal frequency</label>
+                  <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <i class="bi bi-chevron-down"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Navigation Buttons -->
+              <div class="flex justify-between mt-8">
+                <button type="button" class="prev-step px-6 py-3 bg-slate-700 rounded-lg font-medium hover:bg-slate-600 transition-colors flex items-center">
+                  <i class="bi bi-arrow-left mr-2"></i>
+                  Back
+                </button>
+                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-colors flex items-center">
+                  Complete Setup
+                  <i class="bi bi-check-circle ml-2"></i>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Scripts -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Step Navigation
+      const steps = document.querySelectorAll('.step');
+      const nextBtns = document.querySelectorAll('.next-step');
+      const prevBtns = document.querySelectorAll('.prev-step');
+      const progressBar = document.querySelector('.step-progress-bar-fill');
+      const currentStepText = document.getElementById('current-step');
+      const currentStepMobileText = document.getElementById('current-step-mobile');
+      const stepLinks = document.querySelectorAll('[id^="step"][id$="-link"]');
+      const stepChecks = document.querySelectorAll('[id^="step"][id$="-check"]');
+      
+      let currentStep = 1;
+      
+      function updateStep(stepNumber) {
+        steps.forEach(step => {
+          step.classList.remove('active');
+        });
+        // Use a template literal to select the step with matching data-step attribute
+        document.querySelector(`.step[data-step="${stepNumber}"]`).classList.add('active');
+        
+        progressBar.style.width = `${(stepNumber / steps.length) * 100}%`;
+        currentStepText.textContent = stepNumber;
+        currentStepMobileText.textContent = stepNumber;
+        currentStep = stepNumber;
+        
+        // Update sidebar indicators
+        stepChecks.forEach((check, index) => {
+          if (index + 1 < stepNumber) {
+            check.classList.remove('hidden');
+          } else {
+            check.classList.add('hidden');
+          }
+        });
+      }
+      
+      nextBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (currentStep < steps.length) {
+            updateStep(currentStep + 1);
+          }
+        });
+      });
+      
+      prevBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          if (currentStep > 1) {
+            updateStep(currentStep - 1);
+          }
+        });
+      });
+      
+      stepLinks.forEach((link, index) => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          updateStep(index + 1);
+        });
+      });
+      
+      // Mobile menu toggle
+      const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+      const sidebar = document.getElementById('sidebar');
+      
+      mobileMenuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('hidden');
+        sidebar.classList.toggle('absolute');
+        sidebar.classList.toggle('top-0');
+        sidebar.classList.toggle('left-0');
+        sidebar.classList.toggle('h-full');
+        sidebar.classList.toggle('z-40');
+      });
+      
+      // Theme toggle
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeIcon = themeToggle.querySelector('i');
+      let darkMode = true;
+      
+      themeToggle.addEventListener('click', function() {
+        if (darkMode) {
+          document.body.classList.remove('bg-slate-900');
+          document.body.classList.add('bg-gray-100');
+          document.body.classList.remove('text-white');
+          document.body.classList.add('text-gray-800');
+          themeIcon.classList.remove('bi-sun');
+          themeIcon.classList.add('bi-moon');
+          darkMode = false;
+        } else {
+          document.body.classList.add('bg-slate-900');
+          document.body.classList.remove('bg-gray-100');
+          document.body.classList.add('text-white');
+          document.body.classList.remove('text-gray-800');
+          themeIcon.classList.add('bi-sun');
+          themeIcon.classList.remove('bi-moon');
+          darkMode = true;
+        }
+      });
+      
+      // BMI calculation preview
+      const heightInput = document.getElementById('height');
+      const weightInput = document.getElementById('weight');
+      
+      function calculateBMI() {
+        const height = parseFloat(heightInput.value);
+        const weight = parseFloat(weightInput.value);
+        
+        if (height && weight) {
+          const heightInMeters = height / 100;
+          const bmi = weight / (heightInMeters * heightInMeters);
+          console.log(`BMI: ${bmi.toFixed(1)}`);
+          // Optionally, update the UI with the BMI value
+        }
+      }
+      
+      heightInput.addEventListener('input', calculateBMI);
+      weightInput.addEventListener('input', calculateBMI);
+      
+      // Floating labels for inputs with values
+      const inputs = document.querySelectorAll('input, select');
+      inputs.forEach(input => {
+        // Check if input has value on page load
+        if (input.value) {
+          const label = input.nextElementSibling;
+          if (label && label.classList.contains('floating-label')) {
+            label.classList.add('active');
+          }
+        }
+        
+        // Add event listeners for focus and blur
+        input.addEventListener('focus', () => {
+          const label = input.nextElementSibling;
+          if (label && label.classList.contains('floating-label')) {
+            label.classList.add('active');
+          }
+        });
+        
+        input.addEventListener('blur', () => {
+          if (!input.value) {
+            const label = input.nextElementSibling;
+            if (label && label.classList.contains('floating-label')) {
+              label.classList.remove('active');
+            }
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

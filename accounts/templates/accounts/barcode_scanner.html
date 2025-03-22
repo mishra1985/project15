@@ -1,0 +1,672 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NutrAI - Food Scanner</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css">
+  <!-- ZXing Library for barcode scanning -->
+  <script src="https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js"></script>
+  <!-- TensorFlow.js for object detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <style>
+    /* Custom styling for the scanner container */
+    #scanner-container {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      border: 2px dashed #ccc;
+      height: 400px;
+      position: relative;
+    }
+    /* Canvas overlay for object detection */
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+    }
+    /* Message box for scan success */
+    .message-box {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgb(23, 23, 49);
+      color: white;
+      padding: 20px;
+      border: 5px solid;
+      border-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) 1;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      border-radius: 10px;
+      animation: borderAnimation 3s infinite;
+    }
+    @keyframes borderAnimation {
+      0% { border-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) 1; }
+      50% { border-image: linear-gradient(45deg, violet, indigo, blue, green, yellow, orange, red) 1; }
+      100% { border-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet) 1; }
+    }
+    .message-box button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      font-size: 16px;
+    }
+    /* Toggle switch styling */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 30px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 30px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+    /* Detection animation */
+    .detection-pulse {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(0, 255, 255, 0.3);
+      animation: pulse 1.5s infinite;
+      transform: scale(0);
+      opacity: 0;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0); opacity: 0.8; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+    /* Success detection animation */
+    .detection-success {
+      animation: success-zoom 0.5s forwards;
+    }
+    @keyframes success-zoom {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col">
+  <!-- Top Navigation (reused from dashboard) -->
+  <nav class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <!-- Logo and Brand -->
+      <div class="flex items-center space-x-3">
+        <div class="flex items-center">
+          <div class="h-10 w-10 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center">
+            <i class="bi bi-apple text-white text-xl"></i>
+          </div>
+          <span class="ml-3 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-500">NutrAI</span>
+        </div>
+        <span class="hidden md:flex items-center text-sm text-slate-400">
+          <span>Powered by</span>
+          <span class="ml-1 font-semibold text-blue-500 flex items-center">
+            Gemini AI
+            <img src="/api/placeholder/24/24" alt="Gemini AI" class="ml-1 h-5 w-5 rounded-full">
+          </span>
+        </span>
+      </div>
+      <!-- User Actions -->
+      <div class="flex items-center space-x-4">
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-slate-700 transition-colors">
+          <i class="bi bi-sun text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Main Container: Sidebar + Main Content -->
+  <div class="flex flex-1 h-[calc(100vh-60px)]">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-800 border-r border-slate-700 sidebar-transition">
+      <div class="flex flex-col h-full">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-slate-700">
+          <button id="toggle-history-btn" class="w-full py-2 px-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-medium rounded-lg transition-all flex items-center justify-center">
+            <i class="bi bi-calendar-week mr-2"></i>
+            <span>Nutrition History</span>
+          </button>
+        </div>
+        <!-- Weekly Nutrition History -->
+        <div id="weekly-history" class="hidden p-4 border-b border-slate-700 animate-fade-in">
+          <h3 class="text-sm font-semibold text-slate-400 mb-3 flex items-center">
+            <i class="bi bi-graph-up mr-2"></i>
+            Last 7 Days
+          </h3>
+          <div class="mb-4">
+            <canvas id="weeklyCaloriesChart" height="160"></canvas>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-slate-700 p-2 rounded-lg">
+              <div class="text-slate-400">Average</div>
+              <div class="text-lg font-bold">2,107</div>
+              <div class="text-green-400 flex items-center text-xs mt-1">
+                <i class="bi bi-arrow-up-right mr-1"></i>
+                <span>+2.4%</span>
+              </div>
+            </div>
+            <div class="bg-slate-700 p-2 rounded-lg">
+              <div class="text-slate-400">Target</div>
+              <div class="text-lg font-bold">2,200</div>
+              <div class="text-blue-400 flex items-center text-xs mt-1">
+                <i class="bi bi-check-circle mr-1"></i>
+                <span>On track</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Navigation Section -->
+        <div class="p-4 border-b border-slate-700">
+          <div class="flex flex-col space-y-3">
+            <a href="{% url 'dashboard' %}" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-lg transition-colors flex items-center justify-between">
+              <span class="font-medium">Dashboard</span>
+              <i class="bi bi-speedometer2"></i>
+            </a>
+            <a href="{% url 'chat' %}" class="bg-slate-700 hover:bg-slate-600 p-3 rounded-lg transition-colors flex items-center justify-between">
+              <span class="font-medium">Chat</span>
+              <i class="bi bi-chat-dots"></i>
+            </a>
+          </div>
+        </div>
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-slate-700">
+          <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center cursor-pointer hover:text-blue-400 transition-colors">
+              <i class="bi bi-gear mr-2"></i>
+              <span>Settings</span>
+            </div>
+            <div class="flex items-center cursor-pointer hover:text-blue-400 transition-colors">
+              <i class="bi bi-question-circle mr-2"></i>
+              <span>Help</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-4">Food Scanner</h1>
+        
+        <!-- Scanner Mode Selection -->
+        <div class="flex items-center justify-center mb-4 bg-slate-800 p-4 rounded-lg">
+          <span class="mr-3">Barcode</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="scanner-mode-toggle">
+            <span class="slider"></span>
+          </label>
+          <span class="ml-3">Object Detection</span>
+        </div>
+        
+        <!-- Scanner Container -->
+        <div id="scanner-container" class="mb-4">
+          <video id="video" class="w-full h-full object-cover" autoplay muted></video>
+          <canvas id="canvas" class="w-full h-full"></canvas>
+          <div id="detection-animation" class="detection-pulse" style="display: none;"></div>
+        </div>
+        
+        <div class="flex justify-center space-x-4 mb-4">
+          <button id="start-scanner" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-all duration-300 transform hover:scale-105">
+            <i class="bi bi-camera mr-2"></i>Start Scanner
+          </button>
+          <button id="stop-scanner" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition-all duration-300 transform hover:scale-105">
+            <i class="bi bi-stop-circle mr-2"></i>Stop Scanner
+          </button>
+        </div>
+        
+        <div class="mt-4 bg-slate-800 p-4 rounded-lg">
+          <h2 class="text-xl font-semibold flex items-center">
+            <i class="bi bi-info-circle mr-2 text-blue-400"></i>
+            <span id="result-title">Scan Result:</span>
+          </h2>
+          <div id="scan-result" class="mt-2 text-lg"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Message box for scan success -->
+  <div id="messageBox" class="message-box">
+    <h3 class="fw-bold text-info">NutrAI</h3>
+    <p id="messageText"></p>
+    <button id="closeMessage" class="btn btn-primary bg-blue-500 hover:bg-blue-600 rounded px-4 py-2 transition-colors">Close</button>
+  </div>
+  
+  <!-- JavaScript for Scanner -->
+  <script>
+    // DOM Elements
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const startScanButton = document.getElementById("start-scanner");
+    const stopScanButton = document.getElementById("stop-scanner");
+    const resultDisplay = document.getElementById("scan-result");
+    const resultTitle = document.getElementById("result-title");
+    const messageBox = document.getElementById("messageBox");
+    const messageText = document.getElementById("messageText");
+    const closeMessage = document.getElementById("closeMessage");
+    const scannerModeToggle = document.getElementById("scanner-mode-toggle");
+    const detectionAnimation = document.getElementById("detection-animation");
+    const scannerContainer = document.getElementById("scanner-container");
+
+    // Scanner variables
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+    let scanning = false;
+    let objectDetectionMode = false;
+    let model = null;
+    let detectionInterval = null;
+
+    // Load TensorFlow model
+    async function loadTFModel() {
+      try {
+        model = await cocoSsd.load();
+        console.log("TensorFlow model loaded successfully");
+      } catch (error) {
+        console.error("Error loading TensorFlow model:", error);
+      }
+    }
+
+    // Load the model when the page loads
+    loadTFModel();
+
+    // Get camera ID
+    async function getInbuiltCameraId() {
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+      } catch (err) {
+        console.error("Error accessing camera for device enumeration:", err);
+      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === "videoinput");
+      
+      if (videoDevices.length === 1) return videoDevices[0].deviceId;
+      
+      const builtIn = videoDevices.find(device => {
+        const label = device.label.toLowerCase();
+        return label.includes("integrated") || label.includes("built-in") || label.includes("internal");
+      });
+      return builtIn ? builtIn.deviceId : videoDevices[0].deviceId;
+    }
+
+    // Start camera and scanner
+    async function startScanner() {
+      if (scanning) return;
+      scanning = true;
+      
+      try {
+        const deviceId = await getInbuiltCameraId();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId } }
+        });
+        video.srcObject = stream;
+        
+        // Clear previous results
+        resultDisplay.textContent = "";
+        
+        if (objectDetectionMode) {
+          // Start object detection mode
+          resultTitle.innerHTML = '<i class="bi bi-search mr-2"></i>Object Detection:';
+          startObjectDetection();
+        } else {
+          // Start barcode scanning mode
+          resultTitle.innerHTML = '<i class="bi bi-upc-scan mr-2"></i>Barcode Result:';
+          startBarcodeScanner(deviceId);
+        }
+        
+        // Add active effect to scanner container
+        scannerContainer.classList.add('border-blue-500');
+        scannerContainer.classList.remove('border-dashed');
+        scannerContainer.classList.add('border-solid');
+        
+      } catch (error) {
+        console.error("Camera access error: ", error);
+        showMessage("Error: Unable to access camera. Please check permissions.");
+        stopScanner();
+      }
+    }
+    
+    // Start barcode scanner
+    function startBarcodeScanner(deviceId) {
+      canvas.style.display = 'none';
+      codeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+        if (result) {
+          const barcode = result.text;
+          resultDisplay.textContent = `Barcode: ${barcode}`;
+          showMessage(`Barcode Scanned Successfully: ${barcode}`);
+          fetchProductInfo(barcode);
+          
+          // Create success animation
+          createSuccessAnimation();
+          
+          // Stop scanning after a successful scan
+          stopScanner();
+        }
+        if (err && !(err instanceof ZXing.NotFoundException)) {
+          console.error(err);
+        }
+      });
+    }
+    
+    // Start object detection
+    function startObjectDetection() {
+      if (!model) {
+        showMessage("Object detection model is still loading. Please wait a moment.");
+        stopScanner();
+        return;
+      }
+      
+      canvas.style.display = 'block';
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas dimensions to match video
+      canvas.width = video.clientWidth;
+      canvas.height = video.clientHeight;
+      
+      // Create animation for detection in progress
+      createDetectionAnimation();
+      
+      // Run detection
+      detectionInterval = setInterval(() => {
+        if (!scanning) {
+          clearInterval(detectionInterval);
+          return;
+        }
+        
+        // Detect objects
+        model.detect(video).then(predictions => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Filter food-related items
+          const foodItems = predictions.filter(pred => {
+            const foodClasses = ['apple', 'orange', 'banana', 'broccoli', 'carrot', 
+                                'pizza', 'donut', 'cake', 'sandwich', 'hot dog', 
+                                'bowl', 'cup', 'bottle', 'wine glass', 'fork', 
+                                'spoon', 'knife'];
+            return foodClasses.includes(pred.class);
+          });
+          
+          if (foodItems.length > 0) {
+            // If food items detected, show results
+            resultDisplay.innerHTML = "";
+            foodItems.forEach((prediction, index) => {
+              // Draw bounding box
+              ctx.strokeStyle = "rgba(0, 255, 255, 0.8)";
+              ctx.lineWidth = 4;
+              ctx.font = "16px Arial";
+              ctx.fillStyle = "rgba(0, 255, 255, 0.8)";
+              
+              // Draw box with rounded corners
+              const [x, y, width, height] = prediction.bbox;
+              const radius = 10;
+              ctx.beginPath();
+              ctx.moveTo(x + radius, y);
+              ctx.lineTo(x + width - radius, y);
+              ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+              ctx.lineTo(x + width, y + height - radius);
+              ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+              ctx.lineTo(x + radius, y + height);
+              ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+              ctx.lineTo(x, y + radius);
+              ctx.quadraticCurveTo(x, y, x + radius, y);
+              ctx.stroke();
+              
+              // Draw label
+              ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+              ctx.fillRect(x, y - 25, 150, 25);
+              ctx.fillStyle = "#00FFFF";
+              ctx.fillText(
+                `${prediction.class} - ${Math.round(prediction.score * 100)}%`,
+                x + 5,
+                y - 8
+              );
+              
+              // Add to results
+              const foodDiv = document.createElement('div');
+              foodDiv.className = 'bg-slate-700 p-3 rounded-lg mb-2 flex items-center justify-between';
+              foodDiv.innerHTML = `
+                <div>
+                  <span class="font-medium">${prediction.class}</span>
+                  <div class="text-sm text-slate-400">Confidence: ${Math.round(prediction.score * 100)}%</div>
+                </div>
+                <div class="text-blue-400 cursor-pointer hover:text-blue-300" onclick="getNutritionInfo('${prediction.class}')">
+                  <i class="bi bi-info-circle mr-1"></i>Details
+                </div>
+              `;
+              resultDisplay.appendChild(foodDiv);
+            });
+            
+            // Create success animation
+            createSuccessAnimation();
+            
+            // Stop detection after finding food items
+            clearInterval(detectionInterval);
+            
+            // Show message
+            showMessage(`Detected ${foodItems.length} food item(s)!`);
+          } else if (predictions.length > 0) {
+            // If non-food items detected, show in interface but keep scanning
+            resultDisplay.innerHTML = `<div class="text-yellow-400"><i class="bi bi-exclamation-triangle mr-2"></i>No food items detected yet. Detected: ${predictions[0].class}</div>`;
+          }
+        });
+      }, 1000); // Run detection every second
+    }
+    
+    // Stop scanner
+    function stopScanner() {
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+      }
+      
+      const stream = video.srcObject;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      
+      codeReader.reset();
+      
+      // Reset UI
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      scannerContainer.classList.remove('border-blue-500');
+      scannerContainer.classList.add('border-dashed');
+      scannerContainer.classList.remove('border-solid');
+      detectionAnimation.style.display = 'none';
+      
+      scanning = false;
+    }
+    
+    // Create detection animation
+    function createDetectionAnimation() {
+      detectionAnimation.style.display = 'block';
+      detectionAnimation.style.top = '50%';
+      detectionAnimation.style.left = '50%';
+      detectionAnimation.style.width = '50px';
+      detectionAnimation.style.height = '50px';
+      detectionAnimation.style.marginTop = '-25px';
+      detectionAnimation.style.marginLeft = '-25px';
+    }
+    
+    // Create success animation
+    function createSuccessAnimation() {
+      scannerContainer.classList.add('detection-success');
+      setTimeout(() => {
+        scannerContainer.classList.remove('detection-success');
+      }, 500);
+    }
+    
+    // Show message
+    function showMessage(message) {
+      messageText.textContent = message;
+      messageBox.style.display = "block";
+    }
+    
+    // Fetch product info for barcode
+    function fetchProductInfo(barcode) {
+      fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 1) {
+            const product = data.product;
+            let nutritionHTML = `
+              <div class="mt-4 bg-slate-700 p-4 rounded-lg">
+                <h2 class="text-lg font-semibold text-blue-400">${product.product_name || "Unknown Product"}</h2>
+                <div class="mt-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <div class="text-slate-400">Brand</div>
+                    <div>${product.brands || "N/A"}</div>
+                  </div>
+                  <div>
+                    <div class="text-slate-400">Categories</div>
+                    <div>${product.categories || "N/A"}</div>
+                  </div>
+                </div>
+            `;
+            
+            // Add nutrition facts if available
+            if (product.nutriments) {
+              nutritionHTML += `
+                <div class="mt-4">
+                  <h3 class="font-medium text-blue-300">Nutrition Facts (Per 100g)</h3>
+                  <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div class="flex justify-between p-2 bg-slate-800 rounded">
+                      <span>Energy</span>
+                      <span>${product.nutriments["energy-kcal_100g"] || "N/A"} kcal</span>
+                    </div>
+                    <div class="flex justify-between p-2 bg-slate-800 rounded">
+                      <span>Fat</span>
+                      <span>${product.nutriments.fat_100g || "N/A"} g</span>
+                    </div>
+                    <div class="flex justify-between p-2 bg-slate-800 rounded">
+                      <span>Carbs</span>
+                      <span>${product.nutriments.carbohydrates_100g || "N/A"} g</span>
+                    </div>
+                    <div class="flex justify-between p-2 bg-slate-800 rounded">
+                      <span>Proteins</span>
+                      <span>${product.nutriments.proteins_100g || "N/A"} g</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+            
+            nutritionHTML += `</div>`;
+            resultDisplay.innerHTML = `<div class="text-green-400 font-medium mb-2"><i class="bi bi-check-circle mr-2"></i>Product found!</div>` + nutritionHTML;
+          } else {
+            resultDisplay.innerHTML = `<div class="text-yellow-400"><i class="bi bi-exclamation-triangle mr-2"></i>Product with barcode ${barcode} not found in database.</div>`;
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching product info:", error);
+          resultDisplay.innerHTML = `<div class="text-red-400"><i class="bi bi-x-circle mr-2"></i>Error fetching product information.</div>`;
+        });
+    }
+    
+    // Get nutrition info for detected objects
+    function getNutritionInfo(foodItem) {
+      // Sample nutritional data for common foods
+      const nutritionData = {
+        apple: { calories: 52, carbs: 14, proteins: 0.3, fats: 0.2 },
+        banana: { calories: 89, carbs: 22.8, proteins: 1.1, fats: 0.3 },
+        orange: { calories: 47, carbs: 11.8, proteins: 0.9, fats: 0.1 },
+        broccoli: { calories: 34, carbs: 6.6, proteins: 2.8, fats: 0.4 },
+        carrot: { calories: 41, carbs: 9.6, proteins: 0.9, fats: 0.2 },
+        pizza: { calories: 266, carbs: 33, proteins: 11, fats: 10 },
+        donut: { calories: 289, carbs: 34, proteins: 3.7, fats: 15.5 },
+        sandwich: { calories: 290, carbs: 35, proteins: 12, fats: 10 },
+        "hot dog": { calories: 290, carbs: 2, proteins: 10, fats: 26 }
+      };
+      
+      const info = nutritionData[foodItem.toLowerCase()] || 
+                 { calories: "N/A", carbs: "N/A", proteins: "N/A", fats: "N/A" };
+      
+      showMessage(`
+        Nutrition Info for ${foodItem.charAt(0).toUpperCase() + foodItem.slice(1)}:
+        Calories: ${info.calories} kcal
+        Carbs: ${info.carbs}g
+        Proteins: ${info.proteins}g
+        Fats: ${info.fats}g
+      `);
+    }
+    
+    // Close message box
+    closeMessage.addEventListener("click", () => {
+      messageBox.style.display = "none";
+    });
+    
+    // Event listeners
+    startScanButton.addEventListener("click", startScanner);
+    stopScanButton.addEventListener("click", stopScanner);
+    
+    // Scanner mode toggle
+    scannerModeToggle.addEventListener("change", function() {
+      objectDetectionMode = this.checked;
+      if (scanning) {
+        stopScanner();
+        startScanner();
+      }
+    });
+    
+    // Add getNutritionInfo function to window for onclick events
+    window.getNutritionInfo = getNutritionInfo;
+  </script>
+  
+  <!-- Theme toggle functionality -->
+  <script>
+    const themeToggle = document.getElementById('theme-toggle');
+    let isDarkMode = true;
+    themeToggle.addEventListener('click', function() {
+      if (isDarkMode) {
+        document.body.classList.replace('bg-slate-900', 'bg-slate-100');
+        document.body.classList.replace('text-white', 'text-slate-900');
+        themeToggle.innerHTML = '<i class="bi bi-moon text-xl"></i>';
+        isDarkMode = false;
+      } else {
+        document.body.classList.replace('bg-slate-100', 'bg-slate-900');
+        document.body.classList.replace('text-slate-900', 'text-white');
+        themeToggle.innerHTML = '<i class="bi bi-sun text-xl"></i>';
+        isDarkMode = true;
+      }
+    });
+  </script>
+</body>
+</html>
