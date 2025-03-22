@@ -7,7 +7,7 @@ from asgiref.sync import sync_to_async
 from accounts.models import ChatMessage
 
 # Replace with your actual Gemini API key.
-GEMINI_API_KEY = "AIzaSyDpEktjf0jiUVWtLm1_y5-z-eJUgAcGbac"
+GEMINI_API_KEY = ""
 # Streaming endpoint for Gemini content generation.
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key={GEMINI_API_KEY}"
 
