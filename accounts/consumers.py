@@ -5,7 +5,7 @@ import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 from accounts.models import ChatMessage
-
+import os
 # Replace with your actual Gemini API key.
 GEMINI_API_KEY = os.environ.get('GENERATIVE_AI_API_KEY')
 # Streaming endpoint for Gemini content generation.
