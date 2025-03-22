@@ -3,12 +3,17 @@ from psycopg2 import sql
 import os
 # Connect to the default 'postgres' database
 conn = psycopg2.connect(
-    dbname=os.environ.get('GENERATIVE_AI_API_KEY'),
-    user=os.environ.get('GENERATIVE_AI_API_KEY'),
-    password=os.environ.get('GENERATIVE_AI_API_KEY'),
-    host=os.environ.get('GENERATIVE_AI_API_KEY'),
-    port=os.environ.get('GENERATIVE_AI_API_KEY')
+    dbname=os.environ.get('DB_NAME'),
+    user=os.environ.get('DB_USER'),
+    password=os.environ.get('DB_PASSWORD'),
+    host=os.environ.get('DB_HOST'),
+    port=os.environ.get('DB_PORT')
 )
+DB_NAME=p1db
+DB_USER=p1db_user
+DB_PASSWORD=FOyeuq6lS88Ch24DbNNYiscUEXEeDvJj
+DB_HOST=dpg-cvfil75ds78s73fm8t6g-a
+DB_PORT=5432
 conn.autocommit = True  # Allow database creation without a transaction
 
 cur = conn.cursor()
