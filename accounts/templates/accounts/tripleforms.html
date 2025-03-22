@@ -394,34 +394,42 @@
   <!-- JavaScript for Enhanced Tab Switching with Underline Animation -->
   <script>
     const tabs = document.querySelectorAll('.tab');
-    const forms = document.querySelectorAll('.form');
-    const underline = document.getElementById('underline');
+const forms = document.querySelectorAll('.form');
+const underline = document.getElementById('underline');
 
-    // Initialize underline position based on the first tab
-    underline.style.left = "0%";
-    underline.style.width = (100 / tabs.length) + "%";
+// Initialize underline position and default active tab
+underline.style.left = "0%";
+underline.style.width = (100 / tabs.length) + "%";
 
-    // Set first tab as active by default
-    tabs[0].classList.add('active');
-    tabs[1].classList.add('active');
-    tabs[2].classList.add('active');
+// Set only the login tab as active by default and show its form
+forms.forEach((form, i) => {
+  if (i === 0) {
+    form.classList.remove('hidden');
+  } else {
+    form.classList.add('hidden');
+  }
+});
 
+tabs.forEach((tab, index) => {
+  tab.addEventListener('click', (e) => {
+    // Prevent any default action if necessary
+    e.preventDefault();
 
+    // Remove active class from all tabs and hide all forms
+    const targetId = tab.getAttribute('data-target');
+  window.location.hash = targetId;
+    tabs.forEach(t => t.classList.remove('active'));
+    forms.forEach(form => form.classList.add('hidden'));
 
-    tabs.forEach((tab, index) => {
-      tab.addEventListener('click', () => {
-        // Remove active styling from all tabs and hide forms
-        tabs.forEach(t => t.classList.remove('active'));
-        forms.forEach(form => form.classList.add('hidden'));
+    // Activate clicked tab and update underline position
+    tab.classList.add('active');
+    underline.style.left = (index * (100 / tabs.length)) + "%";
 
-        // Activate clicked tab and slide the underline
-        tab.classList.add('active');
-        underline.style.left = (index * (100 / tabs.length)) + "%";
-        // Show corresponding form
-        const targetId = tab.getAttribute('data-target');
-        document.getElementById(targetId).classList.remove('hidden');
-      });
-    });
+    // Show the form corresponding to the clicked tab
+    const targetId = tab.getAttribute('data-target');
+    document.getElementById(targetId).classList.remove('hidden');
+  });
+});
   </script>
 
   <!-- Theme Toggle Script -->
