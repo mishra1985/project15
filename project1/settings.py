@@ -86,10 +86,12 @@ ASGI_APPLICATION = 'project1.asgi.application'
 # myproject/settings.py
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', 'postgres://Superuser:abc@123@localhost:5432/p1db')
+        default=os.environ.get(
+            'DATABASE_URL',
+            'postgres://myuser:mypassword@mydbhost:5432/mydbname'
+        )
     )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
