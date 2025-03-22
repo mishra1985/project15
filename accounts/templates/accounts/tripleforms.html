@@ -263,38 +263,29 @@
   </nav>
 
   <!-- Main Container -->
-  <!-- Still centers the card horizontally, but columns are top-aligned inside -->
   <div class="flex flex-1 items-center justify-center px-4 py-12">
     <div class="w-full max-w-4xl rounded-lg shadow-2xl glass overflow-hidden border border-transparent bg-opacity-50">
-      <!-- Parent flex with items-start so left & right align at the top -->
       <div class="flex flex-col md:flex-row items-start">
         
         <!-- Left Animation (shown on md screens and up) -->
-        <!-- Added pt-8 so it roughly aligns with the right side's top spacing -->
         <div class="hidden md:block md:w-1/2 animation-container pt-8">
-          <!-- Hexagon grid background -->
           <div class="hexagon-grid"></div>
-          
           <!-- Floating elements -->
           <div class="floating-element" style="top: 20%; left: 15%; width: 50px; height: 50px; background: rgba(251, 191, 36, 0.2);"></div>
           <div class="floating-element" style="top: 50%; left: 70%; width: 35px; height: 35px; background: rgba(251, 191, 36, 0.2);"></div>
           <div class="floating-element" style="top: 75%; left: 25%; width: 40px; height: 40px; background: rgba(251, 191, 36, 0.2); animation-delay: 2s;"></div>
           <div class="floating-element" style="top: 30%; left: 80%; width: 30px; height: 30px; background: rgba(251, 191, 36, 0.2); animation-delay: 3s;"></div>
-          
           <!-- Node.js-inspired hexagonal elements -->
           <div class="node-hex" style="top: 20%; left: 30%;"></div>
           <div class="node-hex" style="top: 60%; left: 60%; animation-delay: -5s;"></div>
           <div class="node-hex" style="top: 40%; left: 70%; animation-delay: -3s; width: 40px; height: 40px;"></div>
           <div class="node-hex" style="top: 70%; left: 20%; animation-delay: -7s; width: 30px; height: 30px;"></div>
-          
           <!-- Pulse effects -->
           <div class="pulse" style="top: 40%; left: 50%;"></div>
           <div class="pulse" style="top: 70%; left: 30%; animation-delay: -2s;"></div>
           <div class="pulse" style="top: 20%; left: 60%; animation-delay: -4s;"></div>
-          
           <!-- Enhanced particles -->
           <div class="particles" id="particles"></div>
-          
           <!-- Main animated text -->
           <div class="typing-text">
             <span id="animated-text"></span>
@@ -307,10 +298,10 @@
           <!-- Tab Navigation -->
           <div class="flex space-x-2 mb-8 relative">
             <button data-target="loginForm" class="tab flex-1 py-3 px-4 rounded bg-slate-700 hover:bg-slate-600 font-bold">Login</button>
-            <button data-target="signupForm" class="tab flex-1 py-3 px-4 rounded bg-slate-700 hover:bg-slate-600 font-bold">Register</button>
+            <button data-target="signupForm" class="tab flex-1 py-3 px-4 rounded bg-slate-700 hover:bg-slate-600 font-bold">Sign Up</button>
             <button data-target="forgotForm" class="tab flex-1 py-3 px-4 rounded bg-slate-700 hover:bg-slate-600 font-bold">Forgot Password</button>
             <!-- Underline indicator -->
-            <div id="underline" class="tab-underline absolute bottom-0 left-0 w-1/3"></div>
+            <div id="underline" class="tab-underline absolute bottom-0 left-0"></div>
           </div>
           <!-- Forms Section -->
           <!-- Login Form -->
@@ -325,7 +316,7 @@
               <div class="mb-5 input-focus-effect">
                 {{ login_form.password|add_class:"w-full p-4 rounded bg-slate-700 border border-slate-600" }}
               </div>
-              <button type="submit" class="w-full py-3 rounded transition-colors button-hover-effect">Login</button>
+              <button type="submit" class="w-full py-3 rounded button-hover-effect">Login</button>
             </form>
             <div class="mt-6">
               <a href="#" class="text-blue-400 hover:underline">Forgot Password?</a>
@@ -353,7 +344,7 @@
                 <label for="{{ reg_form.password2.id_for_label }}" class="block text-sm font-medium text-gray-300">Confirm Password</label>
                 {{ reg_form.password2|add_class:"w-full p-4 rounded bg-slate-700 border border-slate-600" }}
               </div>
-              <button type="submit" class="w-full py-3 rounded transition-colors button-hover-effect">Sign Up</button>
+              <button type="submit" class="w-full py-3 rounded button-hover-effect">Sign Up</button>
             </form>
           </div>
           <!-- Forgot Password Form -->
@@ -378,7 +369,7 @@
                 <label for="{{ forgot_form.new_password2.id_for_label }}" class="block text-sm font-medium text-gray-300">Confirm New Password</label>
                 {{ forgot_form.new_password2|add_class:"w-full p-4 rounded bg-slate-700 border border-slate-600" }}
               </div>
-              <button type="submit" class="w-full py-3 rounded transition-colors button-hover-effect">Update Password</button>
+              <button type="submit" class="w-full py-3 rounded button-hover-effect">Update Password</button>
             </form>
           </div>
         </div>
@@ -391,69 +382,76 @@
     © 2025 NutrAI. All rights reserved.
   </footer>
 
-  <!-- JavaScript for Enhanced Tab Switching with Underline Animation -->
-  <script>
-    const tabs = document.querySelectorAll('.tab');
-const forms = document.querySelectorAll('.form');
-const underline = document.getElementById('underline');
-
-// Initialize underline position and default active tab
-underline.style.left = "0%";
-underline.style.width = (100 / tabs.length) + "%";
-
-// Set only the login tab as active by default and show its form
-forms.forEach((form, i) => {
-  if (i === 0) {
-    form.classList.remove('hidden');
-  } else {
-    form.classList.add('hidden');
-  }
-});
-
-tabs.forEach((tab, index) => {
-  tab.addEventListener('click', (e) => {
-    // Prevent any default action if necessary
-    e.preventDefault();
-
-    // Remove active class from all tabs and hide all forms
-    const targetId = tab.getAttribute('data-target');
-  window.location.hash = targetId;
-    tabs.forEach(t => t.classList.remove('active'));
-    forms.forEach(form => form.classList.add('hidden'));
-
-    // Activate clicked tab and update underline position
-    tab.classList.add('active');
-    underline.style.left = (index * (100 / tabs.length)) + "%";
-
-    // Show the form corresponding to the clicked tab
-    const targetId = tab.getAttribute('data-target');
-    document.getElementById(targetId).classList.remove('hidden');
-  });
-});
-  </script>
-
-  <!-- Theme Toggle Script -->
-  <script>
-    const themeToggle = document.getElementById('theme-toggle');
-    let isDarkMode = true;
-    themeToggle.addEventListener('click', () => {
-      if (isDarkMode) {
-        document.body.classList.replace('bg-slate-900', 'bg-slate-100');
-        document.body.classList.replace('text-white', 'text-slate-900');
-        themeToggle.innerHTML = '<i class="bi bi-moon text-xl"></i>';
-        isDarkMode = false;
-      } else {
-        document.body.classList.replace('bg-slate-100', 'bg-slate-900');
-        document.body.classList.replace('text-slate-900', 'text-white');
-        themeToggle.innerHTML = '<i class="bi bi-sun text-xl"></i>';
-        isDarkMode = true;
-      }
-    });
-  </script>
-
-  <!-- Enhanced Text Animation Script -->
+  <!-- JavaScript for Tab Switching with Underline Animation and URL Hash Handling -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      const tabs = document.querySelectorAll('.tab');
+      const forms = document.querySelectorAll('.form');
+      const underline = document.getElementById('underline');
+      
+      // Set underline width based on number of tabs
+      underline.style.width = (100 / tabs.length) + "%";
+      
+      // Function to clear active states and hide forms
+      function clearActive() {
+        tabs.forEach(t => t.classList.remove('active'));
+        forms.forEach(form => form.classList.add('hidden'));
+      }
+      
+      // Tab click handler
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          clearActive();
+          tab.classList.add('active');
+          underline.style.left = (index * (100 / tabs.length)) + "%";
+          const targetId = tab.getAttribute('data-target');
+          document.getElementById(targetId).classList.remove('hidden');
+          // Update URL hash so that active tab is preserved on reload
+          window.location.hash = targetId;
+        });
+      });
+      
+      // On page load, check for a URL hash and set the corresponding tab active
+      const hash = window.location.hash.substring(1);
+      let found = false;
+      if (hash) {
+        tabs.forEach((tab, index) => {
+          if (tab.getAttribute('data-target') === hash) {
+            clearActive();
+            tab.classList.add('active');
+            underline.style.left = (index * (100 / tabs.length)) + "%";
+            document.getElementById(hash).classList.remove('hidden');
+            found = true;
+          }
+        });
+      }
+      // If no hash is found, default to Login
+      if (!found) {
+        clearActive();
+        tabs[0].classList.add('active');
+        underline.style.left = "0%";
+        document.getElementById('loginForm').classList.remove('hidden');
+      }
+      
+      // Theme Toggle Script
+      const themeToggle = document.getElementById('theme-toggle');
+      let isDarkMode = true;
+      themeToggle.addEventListener('click', () => {
+        if (isDarkMode) {
+          document.body.classList.replace('bg-slate-900', 'bg-slate-100');
+          document.body.classList.replace('text-white', 'text-slate-900');
+          themeToggle.innerHTML = '<i class="bi bi-moon text-xl"></i>';
+          isDarkMode = false;
+        } else {
+          document.body.classList.replace('bg-slate-100', 'bg-slate-900');
+          document.body.classList.replace('text-slate-900', 'text-white');
+          themeToggle.innerHTML = '<i class="bi bi-sun text-xl"></i>';
+          isDarkMode = true;
+        }
+      });
+      
+      // Enhanced Text Animation Script
       const textElement = document.getElementById('animated-text');
       const messages = [
         "Welcome to the new world of Health Insights, NutrAI",
@@ -470,7 +468,6 @@ tabs.forEach((tab, index) => {
       
       function typeEffect() {
         const currentMessage = messages[messageIndex];
-        
         if (!isDeleting && charIndex <= currentMessage.length) {
           textElement.textContent = currentMessage.substring(0, charIndex);
           charIndex++;
@@ -488,79 +485,49 @@ tabs.forEach((tab, index) => {
           setTimeout(typeEffect, typingDelay);
         }
       }
-      
       typeEffect();
       
       // Create enhanced particle effect
       const particlesContainer = document.getElementById('particles');
       const particleCount = 40;
-      
       for (let i = 0; i < particleCount; i++) {
         createParticle();
       }
-      
       function createParticle() {
         const particle = document.createElement('div');
         particle.classList.add('particle');
-        
-        // Random size between 3-8px
         const size = Math.random() * 5 + 3;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
-        
-        // Random position
         const posX = Math.random() * 100;
         const posY = Math.random() * 100;
         particle.style.left = `${posX}%`;
         particle.style.top = `${posY}%`;
-        
-        // Random opacity
         particle.style.opacity = Math.random() * 0.7 + 0.3;
-        
-        // Add particle to container and animate it
         particlesContainer.appendChild(particle);
         animateParticle(particle);
       }
-      
       function animateParticle(particle) {
-        // Get current position
         const style = window.getComputedStyle(particle);
         let posX = parseFloat(style.left);
         let posY = parseFloat(style.top);
-        
-        // Random movement with more variance
         const moveX = (Math.random() - 0.5) * 0.8;
         const moveY = (Math.random() - 0.5) * 0.8;
-        
-        // Animation function
         function move() {
           posX += moveX;
           posY += moveY;
-          
-          // Wrap around edges
           if (posX > 100) posX = 0;
           if (posX < 0) posX = 100;
           if (posY > 100) posY = 0;
           if (posY < 0) posY = 100;
-          
           particle.style.left = `${posX}%`;
           particle.style.top = `${posY}%`;
-          
-          // Subtle scale variation
           const scale = 0.8 + Math.sin(Date.now() / 1000) * 0.2;
           particle.style.transform = `scale(${scale})`;
-          
           requestAnimationFrame(move);
         }
-        
         move();
       }
-
-      // Add button hover effect
-      const buttons = document.querySelectorAll('button[type="submit"]');
-      buttons.forEach(button => {
-        button.classList.add('button-hover-effect');
-      });
     });
   </script>
 </body>
