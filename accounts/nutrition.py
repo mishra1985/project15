@@ -2,7 +2,7 @@ import google.generativeai as genai
 import re
 from datetime import date
 from accounts.models import DailyMeal
-
+import os
 # Configure the Gemini API with your API key
 genai.configure(api_key=os.environ.get('GENERATIVE_AI_API_KEY'))
 
