@@ -25,8 +25,8 @@ SECRET_KEY = 'django-insecure-m1=uh!_l91%-cx-dj8gg8n9hoff!z@(dx_3b9iop7-xk^7om9s
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.ngrok-free.app']
-CSRF_TRUSTED_ORIGINS = ['https://69d0-182-156-2-173.ngrok-free.app'] 
+ALLOWED_HOSTS = ['server', 'localhost', '.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = ['server link'] 
 
 # Application definition
 
@@ -87,9 +87,9 @@ ASGI_APPLICATION = 'project1.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'p1db',       # Replace with your PostgreSQL database name
-        'USER': 'Superuser',      # Replace with your PostgreSQL username
-        'PASSWORD': 'abc@123',  # Replace with your PostgreSQL password
+        'NAME': '#',       # Replace with your PostgreSQL database name
+        'USER': '#',      # Replace with your PostgreSQL username
+        'PASSWORD': '#',  # Replace with your PostgreSQL password
         'HOST': 'localhost',
         'PORT': '5432',
     }
