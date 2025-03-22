@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-
+import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -85,16 +85,10 @@ ASGI_APPLICATION = 'project1.asgi.application'
 
 # myproject/settings.py
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'p1db',       # Replace with your PostgreSQL database name
-        'USER': 'Superuser',      # Replace with your PostgreSQL username
-        'PASSWORD': 'abc@123',  # Replace with your PostgreSQL password
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL', 'postgres://Superuser:abc@123@localhost:5432/p1db')
+    )
 }
-
 
 
 # Password validation
