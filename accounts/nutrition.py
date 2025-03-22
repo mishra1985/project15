@@ -4,7 +4,7 @@ from datetime import date
 from accounts.models import DailyMeal
 
 # Configure the Gemini API with your API key
-genai.configure(api_key="AIzaSyDSMOfFTe6pIEYyUdyElU1iG8122yLglZ0")
+genai.configure(api_key=os.environ.get('GENERATIVE_AI_API_KEY'))
 
 def ask_gemini(question):
     try:
